@@ -1,0 +1,52 @@
+{
+  "timestamp": 1711027200,
+  "symbol": "XAUUSDm",
+  "timeframe": "M15",
+  "trend": "bullish",
+  "signals": [
+    {
+      "time": 2000,
+      "direction": "bullish",
+      "price": 2050.00,
+      "sl_price": 2045.00,
+      "tp_price": 2060.00,
+      "sl_distance": 5.00,
+      "tp_distance": 10.00,
+      "tp_rr_ratio": 2.0,
+      "probability": 0.35,
+      "poi_type": "CHoCH",
+      "is_oos": 1
+    },
+    {
+      "time": 2000,
+      "direction": "bullish",
+      "price": 2050.00,
+      "sl_price": 2045.00,
+      "tp_price": 2060.00,
+      "sl_distance": 5.00,
+      "tp_distance": 10.00,
+      "tp_rr_ratio": 2.0,
+      "probability": 0.35,
+      "poi_type": "CHoCH",
+      "is_oos": 1
+    },
+    {
+      "time": 2001,
+      "direction": "bullish",
+      "price": 2051.00,
+      "sl_price": 2046.00,
+      "tp_price": 2061.00,
+      "sl_distance": 5.00,
+      "tp_distance": 10.00,
+      "tp_rr_ratio": 2.0,
+      "probability": 0.40,
+      "poi_type": "BOS",
+      "is_oos": 1
+    }
+  ],
+  "active_pois": [],
+  "fvgs": [],
+  "order_blocks": [],
+  "liquidity_pools": [],
+  "structure_breaks": []
+}
