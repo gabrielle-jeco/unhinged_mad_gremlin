@@ -1,4 +1,4 @@
-# Indicator5 — SMC + Stochastic Probability Trading System
+# SSP - SMC + Stochastic Probability Trading System
 
 An algorithmic trading indicator that combines **Smart Money Concepts (SMC)** price action analysis with **stochastic probability modeling** to generate high-probability trade entry signals for MetaTrader 5.
 
@@ -6,7 +6,7 @@ An algorithmic trading indicator that combines **Smart Money Concepts (SMC)** pr
 
 ## Overview
 
-Indicator5 detects institutional market structure and scores potential trade zones using two-barrier first passage time (FPT) probability theory. Instead of instant market-order fills, it uses **pending limit/stop orders** so the theoretical win probability remains valid at the actual entry price.
+SSP detects institutional market structure and scores potential trade zones using two-barrier first passage time (FPT) probability theory. Instead of instant market-order fills, it uses **pending limit/stop orders** so the theoretical win probability remains valid at the actual entry price.
 
 **Core capabilities:**
 - Detect swing highs/lows, liquidity pools, order blocks (OBs), and fair value gaps (FVGs)
