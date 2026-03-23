@@ -1,0 +1,56 @@
+# Test & Result Folders
+test/
+result/
+results/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
+
+# Dependencies
+*.egg-info/
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+*.csv
+*.xlsx
+*.json.bak
+
+# MT5 terminal files
+*.ex4
+*.ex5
+*.fxo
+
+# System files
+Thumbs.db
+.directory
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Keep tracking the actual code files
+!result/TESTING_SUMMARY.md

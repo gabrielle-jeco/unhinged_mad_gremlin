@@ -24,12 +24,12 @@ class Config:
     max_active_fvgs: int = 10
 
     # -- State Machine --
-    sweep_expiry_bars: int = 60
+    sweep_expiry_bars: int = 25
 
     # -- Probability: Drift & Volatility --
     drift_window: int = 30
     vol_window: int = 50
-    fpt_horizon_bars: int = 20
+    fpt_horizon_bars: int = 10
 
     # -- Probability: Two-Barrier --
     tp_rr_ratio: float = 2.0                     # TP = SL * ratio (1:2 RR)
