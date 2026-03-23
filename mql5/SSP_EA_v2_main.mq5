@@ -40,9 +40,13 @@ int OnInit()
    int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
    double point = SymbolInfoDouble(sym, SYMBOL_POINT);
    long stops_level = SymbolInfoInteger(sym, SYMBOL_TRADE_STOPS_LEVEL);
+   double contract_size = SymbolInfoDouble(sym, SYMBOL_TRADE_CONTRACT_SIZE);
+   double tick_value = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE);
+   double tick_size = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE);
 
    PrintFormat("[IND5] Initialized | Symbol=%s | Digits=%d | Point=%.5f", sym, digits, point);
    PrintFormat("[IND5] Lot: min=%.2f max=%.2f step=%.2f | StopsLevel=%lld", minlot, maxlot, lotstep, stops_level);
+   PrintFormat("[IND5] Contract: size=%.2f | tick_value=%.5f | tick_size=%.5f", contract_size, tick_value, tick_size);
    PrintFormat("[IND5] Risk=%.1f%% | Magic=%d | Trading=%s | PendingExpiry=%d mins",
                RiskPercent, MagicNumber, EnableTrading ? "ON" : "OFF", PendingExpiryMins);
 
