@@ -175,8 +175,12 @@ def run_single(rates, full_smc, trend_per_bar, config: Config,
             mfe = float(entry - np.min(fl))
             mae = float(np.max(fh) - entry)
 
-        poi_h = abs(sig["poi_top"] - sig["poi_bottom"])
-        sl = poi_h if poi_h > 0 else mae
+        # SL distance = entry-to-POI.edge (matches JSON export logic & MT5 EA)
+        if is_buy:
+            sl = entry - sig["poi_bottom"]
+        else:
+            sl = sig["poi_top"] - entry
+        sl = abs(sl) if sl > 0 else mae
         tp = sl * rr
 
         hit_tp = mfe >= tp

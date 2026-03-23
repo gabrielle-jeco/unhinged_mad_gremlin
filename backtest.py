@@ -239,9 +239,12 @@ def run_backtest(rates, config: Config, warmup: int = 100, eval_bars: int = 20,
             final_pnl = float(entry - future_closes[-1])
 
         # Win/loss with configurable RR benchmark
-        # SL distance = POI height (fixed, matches EA logic)
-        poi_height = abs(sig["poi_top"] - sig["poi_bottom"])
-        sl_distance = poi_height if poi_height > 0 else 0.01  # Matches mt5_interface.py fallback
+        # SL distance = entry-to-POI.edge (matches JSON export logic & MT5 EA)
+        if is_buy:
+            sl_distance = entry - sig["poi_bottom"]
+        else:
+            sl_distance = sig["poi_top"] - entry
+        sl_distance = abs(sl_distance) if sl_distance > 0 else 0.01
         tp_distance = sl_distance * config.tp_rr_ratio
 
         hit_tp = max_favorable >= tp_distance
@@ -452,22 +455,32 @@ def print_results(results, config: Config, starting_balance: float = 0,
             header += f", leverage: 1:{leverage}"
         header += ")"
         print(header)
-        print("-" * 70)
+        print("-" * 90)
 
         balance = starting_balance
         peak_balance = starting_balance
         max_dd_dollar = 0.0
         max_dd_pct_bal = 0.0
 
+        # Header for detailed balance simulation
         if show_leverage:
-            print(f"  {'#':>3} {'Date':<16} {'Dir':<5} {'Lots':>7} {'Margin':>9}"
-                  f" {'Risk($)':>9} {'PnL($)':>10} {'Balance':>12} {'DD%':>6}")
+            print(f"  {'#':>3} {'Date':<16} {'Dir':<5} {'Entry':>9} {'SL':>9} {'TP':>9} {'Exit':>9}"
+                  f" {'Lots':>7} {'Margin':>9} {'PnL($)':>10} {'Balance':>12}")
         else:
-            print(f"  {'#':>3} {'Date':<18} {'Dir':<5} {'Risk($)':>9} {'PnL($)':>10}"
-                  f" {'Balance':>12} {'DD%':>7}")
+            print(f"  {'#':>3} {'Date':<18} {'Dir':<5} {'Entry':>9} {'SL':>9} {'TP':>9} {'Exit':>9}"
+                  f" {'PnL($)':>10} {'Balance':>12}")
 
         for i, r in enumerate(results):
-            sl_dist = abs(r["poi_top"] - r["poi_bottom"])
+            # Use entry-adjusted SL distance (matches JSON export logic & MT5 EA)
+            if r["direction"] == Direction.BULLISH:
+                sl_dist = r["entry_price"] - r["poi_bottom"]
+                sl_price = r["entry_price"] - sl_dist
+                tp_price = r["entry_price"] + (sl_dist * config.tp_rr_ratio)
+            else:
+                sl_dist = r["poi_top"] - r["entry_price"]
+                sl_price = r["entry_price"] + sl_dist
+                tp_price = r["entry_price"] - (sl_dist * config.tp_rr_ratio)
+            sl_dist = abs(sl_dist) if sl_dist > 0 else 0.01
 
             if use_fixed_lot:
                 lot_size = fixed_lot
@@ -499,6 +512,12 @@ def print_results(results, config: Config, starting_balance: float = 0,
             d = "BUY" if r["direction"] == Direction.BULLISH else "SELL"
             sign = "+" if pnl_dollar >= 0 else ""
 
+            # Calculate exit price from pnl_r
+            if r["direction"] == Direction.BULLISH:
+                exit_price = r["entry_price"] + (r["pnl_r"] * sl_dist)
+            else:
+                exit_price = r["entry_price"] - (r["pnl_r"] * sl_dist)
+
             if show_leverage:
                 position_value = lot_size_actual * r["entry_price"] * contract_size
                 margin_req = position_value / leverage if leverage > 0 else position_value
@@ -507,19 +526,19 @@ def print_results(results, config: Config, starting_balance: float = 0,
                 else:
                     lot_str = f"{lot_size_actual:>7.3f}"
                 print(
-                    f"  {i+1:>3} {r['datetime']:<16} {d:<5}{lot_str}"
-                    f" ${margin_req:>8,.2f} ${risk_amount:>8,.2f}"
-                    f" {sign}${pnl_dollar:>8,.2f} ${balance:>11,.2f} {dd_pct:>5.1f}%"
+                    f"  {i+1:>3} {r['datetime']:<16} {d:<5} "
+                    f"{r['entry_price']:>9.3f} {sl_price:>9.3f} {tp_price:>9.3f} {exit_price:>9.3f} "
+                    f"{lot_str} ${margin_req:>8,.2f} {sign}${pnl_dollar:>8,.2f} ${balance:>11,.2f}"
                 )
             else:
                 print(
                     f"  {i+1:>3} {r['datetime']:<18} {d:<5} "
-                    f"${risk_amount:>8,.2f} {sign}${pnl_dollar:>8,.2f}"
-                    f" ${balance:>11,.2f} {dd_pct:>6.1f}%"
+                    f"{r['entry_price']:>9.3f} {sl_price:>9.3f} {tp_price:>9.3f} {exit_price:>9.3f} "
+                    f"{sign}${pnl_dollar:>8,.2f} ${balance:>11,.2f}"
                 )
 
         total_return = ((balance - starting_balance) / starting_balance) * 100
-        print("-" * 70)
+        print("-" * 90)
         print(f"  Starting Balance  : ${starting_balance:>12,.2f}")
         print(f"  Final Balance     : ${balance:>12,.2f}")
         net_pnl = balance - starting_balance
@@ -636,16 +655,16 @@ def _copy_to_tester_sandbox(source_filepath, filename):
     """Copy JSON file to Strategy Tester sandbox folder for Replay EA.
 
     MT5 Strategy Tester runs in isolated sandbox:
-    C:\Program Files\MetaTrader\Tester\Agent-127.0.0.1-XXXX\MQL5\Files\
+    C:\Program Files\MetaTrader\Tester\Agent-127.0.0.1-XXXX\MQL5\Files\\
 
     Python exports to main terminal folder:
-    C:\Program Files\MetaTrader\MQL5\Files\
+    C:\Program Files\MetaTrader\MQL5\Files\\
 
     We need to copy to sandbox for FileOpen() in MQL5 to find it.
     """
     try:
         # Find Tester sandbox paths (multiple agents may be running)
-        tester_base = r"C:\Program Files\MetaTrader\Tester"
+        tester_base = r"C:\\Program Files\\MetaTrader\\Tester"
         agent_pattern = os.path.join(tester_base, "Agent-*", "MQL5", "Files")
 
         tester_paths = glob.glob(agent_pattern)

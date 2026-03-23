@@ -168,9 +168,12 @@ def run_oos_backtest(rates, config: Config, warmup: int, split_bar: int,
             max_adverse = float(np.max(future_highs) - entry)
             final_pnl = float(entry - future_closes[-1])
 
-        # SL distance = POI height (fixed, matches EA logic)
-        poi_height = abs(sig["poi_top"] - sig["poi_bottom"])
-        sl_distance = poi_height if poi_height > 0 else 0.01  # Matches mt5_interface.py fallback
+        # SL distance = entry-to-POI.edge (matches JSON export logic & MT5 EA)
+        if is_buy:
+            sl_distance = entry - sig["poi_bottom"]
+        else:
+            sl_distance = sig["poi_top"] - entry
+        sl_distance = abs(sl_distance) if sl_distance > 0 else 0.01
         tp_distance = sl_distance * config.tp_rr_ratio
 
         hit_tp = max_favorable >= tp_distance

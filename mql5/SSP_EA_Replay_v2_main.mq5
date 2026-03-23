@@ -13,6 +13,7 @@
 //--- Input parameters (SAME as Indicator5_EA.mq5)
 input int      MagicNumber     = 12346;        // Magic number for trade identification
 input double   RiskPercent     = 1.0;          // Risk per trade (% of balance)
+input double   FixedLot        = 0.0;          // Fixed lot size (0 = use risk-based calculation)
 input string   SignalFile      = "backtest_signals_XAUUSDm.json"; // JSON signal file
 input bool     EnableTrading   = true;         // Enable live trading
 input int      PendingExpiryMins = 45;         // Pending order expiry (mins, 45 = 3 bars for M15)
@@ -69,9 +70,13 @@ int OnInit()
    int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
    double point = SymbolInfoDouble(sym, SYMBOL_POINT);
    long stops_level = SymbolInfoInteger(sym, SYMBOL_TRADE_STOPS_LEVEL);
+   double contract_size = SymbolInfoDouble(sym, SYMBOL_TRADE_CONTRACT_SIZE);
+   double tick_value = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE);
+   double tick_size = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE);
 
    PrintFormat("[REPLAY_V2] Initialized | Symbol=%s | Digits=%d | Point=%.5f", sym, digits, point);
    PrintFormat("[REPLAY_V2] Lot: min=%.2f max=%.2f step=%.2f | StopsLevel=%lld", minlot, maxlot, lotstep, stops_level);
+   PrintFormat("[REPLAY_V2] Contract: size=%.2f | tick_value=%.5f | tick_size=%.5f", contract_size, tick_value, tick_size);
    PrintFormat("[REPLAY_V2] Risk=%.1f%% | Magic=%d | Trading=%s | PendingExpiry=%d mins | OOSOnly=%s",
                RiskPercent, MagicNumber, EnableTrading ? "ON" : "OFF", PendingExpiryMins, OOSOnly ? "Yes" : "No");
 
@@ -318,6 +323,10 @@ void ProcessSignal(int idx)
    PrintFormat("[REPLAY_V2] Signal #%d: %s | Ref=%.5f | Ask=%.5f Bid=%.5f | SL=%.5f TP=%.5f | P(win)=%.2f%%",
                idx, direction, ref_price, ask, bid, sl_price, tp_price, probability * 100);
 
+   // DEBUG: Log exact order parameters being sent to MT5
+   PrintFormat("[REPLAY_V2] ORDER DEBUG: lot_size=%.4f sl_dist=%.5f tp_dist=%.5f",
+               lot_size, sl_distance, sl_distance * tp_rr_ratio);
+
    // Place pending order based on current price vs ref_price (SAME LOGIC as Live EA)
    bool success = false;
    string order_type = "";
@@ -397,6 +406,19 @@ void ProcessSignal(int idx)
 double CalculateLotSize(double entry_price, double sl_price)
 {
    string sym = Symbol();
+   double minlot = SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN);
+   double maxlot = SymbolInfoDouble(sym, SYMBOL_VOLUME_MAX);
+   double lotstep = SymbolInfoDouble(sym, SYMBOL_VOLUME_STEP);
+
+   // If FixedLot is set, use it directly (for debugging/testing)
+   if(FixedLot > 0)
+   {
+      double fixed = MathMax(FixedLot, minlot);
+      fixed = MathMin(fixed, maxlot);
+      fixed = MathFloor(fixed / lotstep) * lotstep;
+      PrintFormat("[REPLAY_V2] FIXED LOT MODE: Using %.2f lots (bypassing risk calculation)", fixed);
+      return fixed;
+   }
 
    // Get account balance
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
@@ -410,9 +432,6 @@ double CalculateLotSize(double entry_price, double sl_price)
    // Get symbol info for lot calculation
    double tick_value = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE);
    double tick_size = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE);
-   double minlot = SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN);
-   double maxlot = SymbolInfoDouble(sym, SYMBOL_VOLUME_MAX);
-   double lotstep = SymbolInfoDouble(sym, SYMBOL_VOLUME_STEP);
 
    if(tick_value <= 0 || tick_size <= 0)
    {
